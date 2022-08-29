@@ -1,5 +1,5 @@
 ---
-source: parser/src/parser.rs
+source: compiler/parser/src/parser.rs
 expression: parse_ast
 ---
 Located {
@@ -38,7 +38,7 @@ Located {
                                 custom: (),
                                 node: Name {
                                     id: "y",
-                                    ctx: Load,
+                                    ctx: Store,
                                 },
                             },
                             Located {
@@ -49,11 +49,11 @@ Located {
                                 custom: (),
                                 node: Name {
                                     id: "y2",
-                                    ctx: Load,
+                                    ctx: Store,
                                 },
                             },
                         ],
-                        ctx: Load,
+                        ctx: Store,
                     },
                 },
                 iter: Located {
@@ -79,7 +79,7 @@ Located {
                     custom: (),
                     node: Name {
                         id: "a",
-                        ctx: Load,
+                        ctx: Store,
                     },
                 },
                 iter: Located {

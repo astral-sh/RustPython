@@ -1,6 +1,6 @@
 ---
-source: compiler/parser/src/parser.rs
-expression: "parse_program(source, \"<test>\").unwrap()"
+source: compiler/parser/src/context.rs
+expression: parse_ast
 ---
 [
     Located {
@@ -14,7 +14,7 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                 Located {
                     location: Location {
                         row: 1,
-                        column: 1,
+                        column: 2,
                     },
                     custom: (),
                     node: Tuple {
@@ -22,22 +22,32 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                             Located {
                                 location: Location {
                                     row: 1,
-                                    column: 1,
+                                    column: 2,
                                 },
                                 custom: (),
                                 node: Name {
-                                    id: "a",
+                                    id: "x",
                                     ctx: Store,
                                 },
                             },
                             Located {
                                 location: Location {
                                     row: 1,
-                                    column: 4,
+                                    column: 5,
                                 },
                                 custom: (),
-                                node: Name {
-                                    id: "b",
+                                node: Starred {
+                                    value: Located {
+                                        location: Location {
+                                            row: 1,
+                                            column: 6,
+                                        },
+                                        custom: (),
+                                        node: Name {
+                                            id: "y",
+                                            ctx: Store,
+                                        },
+                                    },
                                     ctx: Store,
                                 },
                             },
@@ -49,7 +59,7 @@ expression: "parse_program(source, \"<test>\").unwrap()"
             value: Located {
                 location: Location {
                     row: 1,
-                    column: 8,
+                    column: 12,
                 },
                 custom: (),
                 node: Tuple {
@@ -57,12 +67,12 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                         Located {
                             location: Location {
                                 row: 1,
-                                column: 8,
+                                column: 12,
                             },
                             custom: (),
                             node: Constant {
                                 value: Int(
-                                    4,
+                                    1,
                                 ),
                                 kind: None,
                             },
@@ -70,12 +80,25 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                         Located {
                             location: Location {
                                 row: 1,
-                                column: 11,
+                                column: 15,
                             },
                             custom: (),
                             node: Constant {
                                 value: Int(
-                                    5,
+                                    2,
+                                ),
+                                kind: None,
+                            },
+                        },
+                        Located {
+                            location: Location {
+                                row: 1,
+                                column: 18,
+                            },
+                            custom: (),
+                            node: Constant {
+                                value: Int(
+                                    3,
                                 ),
                                 kind: None,
                             },
