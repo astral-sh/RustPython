@@ -283,7 +283,7 @@ pub enum ExprKind<U = ()> {
 }
 pub type Expr<U = ()> = Located<ExprKind<U>, U>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ExprContext {
     Load,
     Store,
