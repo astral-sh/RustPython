@@ -1,6 +1,6 @@
 ---
-source: compiler/parser/src/parser.rs
-expression: "parse_program(source, \"<test>\").unwrap()"
+source: compiler/parser/src/context.rs
+expression: parse_ast
 ---
 [
     Located {
@@ -17,31 +17,8 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                         column: 1,
                     },
                     custom: (),
-                    node: Tuple {
-                        elts: [
-                            Located {
-                                location: Location {
-                                    row: 1,
-                                    column: 1,
-                                },
-                                custom: (),
-                                node: Name {
-                                    id: "a",
-                                    ctx: Store,
-                                },
-                            },
-                            Located {
-                                location: Location {
-                                    row: 1,
-                                    column: 4,
-                                },
-                                custom: (),
-                                node: Name {
-                                    id: "b",
-                                    ctx: Store,
-                                },
-                            },
-                        ],
+                    node: Name {
+                        id: "x",
                         ctx: Store,
                     },
                 },
@@ -49,7 +26,7 @@ expression: "parse_program(source, \"<test>\").unwrap()"
             value: Located {
                 location: Location {
                     row: 1,
-                    column: 8,
+                    column: 6,
                 },
                 custom: (),
                 node: Tuple {
@@ -57,12 +34,12 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                         Located {
                             location: Location {
                                 row: 1,
-                                column: 8,
+                                column: 6,
                             },
                             custom: (),
                             node: Constant {
                                 value: Int(
-                                    4,
+                                    1,
                                 ),
                                 kind: None,
                             },
@@ -70,12 +47,25 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                         Located {
                             location: Location {
                                 row: 1,
-                                column: 11,
+                                column: 9,
                             },
                             custom: (),
                             node: Constant {
                                 value: Int(
-                                    5,
+                                    2,
+                                ),
+                                kind: None,
+                            },
+                        },
+                        Located {
+                            location: Location {
+                                row: 1,
+                                column: 12,
+                            },
+                            custom: (),
+                            node: Constant {
+                                value: Int(
+                                    3,
                                 ),
                                 kind: None,
                             },

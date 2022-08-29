@@ -8,6 +8,7 @@ use crate::{
     error::{LexicalError, LexicalErrorType},
     function::{ArgumentList, parse_args, parse_params},
     lexer,
+    context::set_context,
     string::parse_strings,
     token::StringKind
 };
@@ -80,7 +81,7 @@ DelStatement: ast::Stmt = {
         ast::Stmt {
             location,
             custom: (),
-            node: ast::StmtKind::Delete { targets },
+            node: ast::StmtKind::Delete { targets: targets.into_iter().map(|expr| set_context(expr, ast::ExprContext::Del)).collect() },
         }
     },
 };
@@ -95,11 +96,11 @@ ExpressionStatement: ast::Stmt = {
                 node: ast::StmtKind::Expr { value: Box::new(expression) }
             }
         } else {
-            let mut targets = vec![expression];
+            let mut targets = vec![set_context(expression, ast::ExprContext::Store)];
             let mut values = suffix;
 
             while values.len() > 1 {
-                targets.push(values.remove(0));
+                targets.push(set_context(values.remove(0), ast::ExprContext::Store));
             }
 
             let value = Box::new(values.into_iter().next().unwrap());
@@ -116,7 +117,7 @@ ExpressionStatement: ast::Stmt = {
             custom: (),
             location,
             node: ast::StmtKind::AugAssign {
-                target: Box::new(target),
+                target: Box::new(set_context(target, ast::ExprContext::Store)),
                 op,
                 value: Box::new(rhs)
             },
@@ -460,7 +461,7 @@ WithStatement: ast::Stmt = {
 
 WithItem: ast::Withitem = {
     <context_expr:Test> <n:("as" Expression)?> => {
-        let optional_vars = n.map(|val| Box::new(val.1));
+        let optional_vars = n.map(|val| Box::new(set_context(val.1, ast::ExprContext::Store)));
         let context_expr = Box::new(context_expr);
         ast::Withitem { context_expr, optional_vars }
     },
@@ -1170,7 +1171,7 @@ SingleForComprehension: ast::Comprehension = {
     <location:@L> <is_async:"async"?> "for" <target:ExpressionList> "in" <iter:OrTest> <ifs:ComprehensionIf*> => {
         let is_async = is_async.is_some();
         ast::Comprehension {
-            target: Box::new(target),
+            target: Box::new(set_context(target, ast::ExprContext::Store)),
             iter: Box::new(iter),
             ifs,
             is_async: if is_async { 1 } else { 0 },

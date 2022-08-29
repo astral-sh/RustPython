@@ -1,6 +1,6 @@
 ---
-source: compiler/parser/src/parser.rs
-expression: "parse_program(source, \"<test>\").unwrap()"
+source: compiler/parser/src/context.rs
+expression: parse_ast
 ---
 [
     Located {
@@ -14,7 +14,7 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                 Located {
                     location: Location {
                         row: 1,
-                        column: 1,
+                        column: 2,
                     },
                     custom: (),
                     node: Tuple {
@@ -22,22 +22,22 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                             Located {
                                 location: Location {
                                     row: 1,
-                                    column: 1,
+                                    column: 2,
                                 },
                                 custom: (),
                                 node: Name {
-                                    id: "a",
+                                    id: "x",
                                     ctx: Store,
                                 },
                             },
                             Located {
                                 location: Location {
                                     row: 1,
-                                    column: 4,
+                                    column: 5,
                                 },
                                 custom: (),
                                 node: Name {
-                                    id: "b",
+                                    id: "y",
                                     ctx: Store,
                                 },
                             },
@@ -49,24 +49,11 @@ expression: "parse_program(source, \"<test>\").unwrap()"
             value: Located {
                 location: Location {
                     row: 1,
-                    column: 8,
+                    column: 11,
                 },
                 custom: (),
                 node: Tuple {
                     elts: [
-                        Located {
-                            location: Location {
-                                row: 1,
-                                column: 8,
-                            },
-                            custom: (),
-                            node: Constant {
-                                value: Int(
-                                    4,
-                                ),
-                                kind: None,
-                            },
-                        },
                         Located {
                             location: Location {
                                 row: 1,
@@ -75,7 +62,33 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                             custom: (),
                             node: Constant {
                                 value: Int(
-                                    5,
+                                    1,
+                                ),
+                                kind: None,
+                            },
+                        },
+                        Located {
+                            location: Location {
+                                row: 1,
+                                column: 14,
+                            },
+                            custom: (),
+                            node: Constant {
+                                value: Int(
+                                    2,
+                                ),
+                                kind: None,
+                            },
+                        },
+                        Located {
+                            location: Location {
+                                row: 1,
+                                column: 17,
+                            },
+                            custom: (),
+                            node: Constant {
+                                value: Int(
+                                    3,
                                 ),
                                 kind: None,
                             },
