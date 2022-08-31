@@ -18,7 +18,7 @@ expression: parse_ast
                 custom: (),
                 node: Name {
                     id: "x",
-                    ctx: Load,
+                    ctx: Store,
                 },
             },
             iter: Located {
