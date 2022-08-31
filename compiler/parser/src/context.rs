@@ -74,6 +74,13 @@ mod tests {
     }
 
     #[test]
+    fn test_assign_list_comp() {
+        let source = String::from("x = [y for y in (1, 2, 3)]");
+        let parse_ast = parse_program(&source, "<test>").unwrap();
+        insta::assert_debug_snapshot!(parse_ast);
+    }
+
+    #[test]
     fn test_assign_with() {
         let source = String::from("with 1 as x: pass");
         let parse_ast = parse_program(&source, "<test>").unwrap();
