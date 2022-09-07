@@ -95,6 +95,13 @@ mod tests {
     }
 
     #[test]
+    fn test_ann_assign_name() {
+        let source = String::from("x: int = 1");
+        let parse_ast = parse_program(&source, "<test>").unwrap();
+        insta::assert_debug_snapshot!(parse_ast);
+    }
+
+    #[test]
     fn test_aug_assign_name() {
         let source = String::from("x += 1");
         let parse_ast = parse_program(&source, "<test>").unwrap();

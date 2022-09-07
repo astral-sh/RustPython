@@ -129,7 +129,7 @@ ExpressionStatement: ast::Stmt = {
             custom: (),
             location,
             node: ast::StmtKind::AnnAssign {
-                target: Box::new(target),
+                target: Box::new(set_context(target, ast::ExprContext::Store)),
                 annotation: Box::new(annotation),
                 value: rhs.map(Box::new),
                 simple: if simple { 1 } else { 0 },
