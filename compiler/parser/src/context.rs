@@ -10,6 +10,13 @@ pub fn set_context(expr: Expr, ctx: ExprContext) -> Expr {
                 ctx,
             },
         ),
+                ExprKind::List { elts, .. } => Expr::new(
+            expr.location,
+            ExprKind::List {
+                elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
+                ctx,
+            },
+        ),
         ExprKind::Attribute { value, attr, .. } => {
             Expr::new(expr.location, ExprKind::Attribute { value, attr, ctx })
         }
@@ -41,6 +48,13 @@ mod tests {
     #[test]
     fn test_assign_tuple() {
         let source = String::from("(x, y) = (1, 2, 3)");
+        let parse_ast = parse_program(&source, "<test>").unwrap();
+        insta::assert_debug_snapshot!(parse_ast);
+    }
+
+    #[test]
+    fn test_assign_list() {
+        let source = String::from("[x, y] = (1, 2, 3)");
         let parse_ast = parse_program(&source, "<test>").unwrap();
         insta::assert_debug_snapshot!(parse_ast);
     }
