@@ -10,7 +10,7 @@ pub fn set_context(expr: Expr, ctx: ExprContext) -> Expr {
                 ctx,
             },
         ),
-                ExprKind::List { elts, .. } => Expr::new(
+        ExprKind::List { elts, .. } => Expr::new(
             expr.location,
             ExprKind::List {
                 elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
