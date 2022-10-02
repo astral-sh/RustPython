@@ -4,33 +4,33 @@ expression: parse_ast
 ---
 [
     Located {
-        start: Location {
+        location: Location {
             row: 1,
             column: 1,
         },
-        end: Location {
+        end_location: Location {
             row: 1,
             column: 24,
         },
         custom: (),
         node: Expr {
             value: Located {
-                start: Location {
+                location: Location {
                     row: 1,
                     column: 1,
                 },
-                end: Location {
+                end_location: Location {
                     row: 1,
                     column: 24,
                 },
                 custom: (),
                 node: Call {
                     func: Located {
-                        start: Location {
+                        location: Location {
                             row: 1,
                             column: 1,
                         },
-                        end: Location {
+                        end_location: Location {
                             row: 1,
                             column: 6,
                         },
@@ -42,11 +42,11 @@ expression: parse_ast
                     },
                     args: [
                         Located {
-                            start: Location {
+                            location: Location {
                                 row: 1,
                                 column: 8,
                             },
-                            end: Location {
+                            end_location: Location {
                                 row: 1,
                                 column: 20,
                             },
@@ -59,11 +59,11 @@ expression: parse_ast
                             },
                         },
                         Located {
-                            start: Location {
+                            location: Location {
                                 row: 1,
                                 column: 22,
                             },
-                            end: Location {
+                            end_location: Location {
                                 row: 1,
                                 column: 23,
                             },
