@@ -2,36 +2,36 @@ use rustpython_ast::{Expr, ExprContext, ExprKind};
 
 pub fn set_context(expr: Expr, ctx: ExprContext) -> Expr {
     match expr.node {
-        ExprKind::Name { id, .. } => Expr::new(expr.start, expr.end, ExprKind::Name { id, ctx }),
+        ExprKind::Name { id, .. } => Expr::new(expr.location, expr.end_location, ExprKind::Name { id, ctx }),
         ExprKind::Tuple { elts, .. } => Expr::new(
-            expr.start,
-            expr.end,
+            expr.location,
+            expr.end_location,
             ExprKind::Tuple {
                 elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
                 ctx,
             },
         ),
         ExprKind::List { elts, .. } => Expr::new(
-            expr.start,
-            expr.end,
+            expr.location,
+            expr.end_location,
             ExprKind::List {
                 elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
                 ctx,
             },
         ),
         ExprKind::Attribute { value, attr, .. } => Expr::new(
-            expr.start,
-            expr.end,
+            expr.location,
+            expr.end_location,
             ExprKind::Attribute { value, attr, ctx },
         ),
         ExprKind::Subscript { value, slice, .. } => Expr::new(
-            expr.start,
-            expr.end,
+            expr.location,
+            expr.end_location,
             ExprKind::Subscript { value, slice, ctx },
         ),
         ExprKind::Starred { value, .. } => Expr::new(
-            expr.start,
-            expr.end,
+            expr.location,
+            expr.end_location,
             ExprKind::Starred {
                 value: Box::new(set_context(*value, ctx)),
                 ctx,

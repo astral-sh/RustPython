@@ -4,22 +4,22 @@ expression: parse_ast
 ---
 [
     Located {
-        start: Location {
+        location: Location {
             row: 1,
             column: 3,
         },
-        end: Location {
+        end_location: Location {
             row: 1,
             column: 18,
         },
         custom: (),
         node: Expr {
             value: Located {
-                start: Location {
+                location: Location {
                     row: 1,
                     column: 3,
                 },
-                end: Location {
+                end_location: Location {
                     row: 1,
                     column: 10,
                 },

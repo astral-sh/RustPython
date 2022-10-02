@@ -4,11 +4,11 @@ expression: parse_ast
 ---
 [
     Located {
-        start: Location {
+        location: Location {
             row: 1,
             column: 1,
         },
-        end: Location {
+        end_location: Location {
             row: 1,
             column: 18,
         },
@@ -17,11 +17,11 @@ expression: parse_ast
             items: [
                 Withitem {
                     context_expr: Located {
-                        start: Location {
+                        location: Location {
                             row: 1,
                             column: 6,
                         },
-                        end: Location {
+                        end_location: Location {
                             row: 1,
                             column: 7,
                         },
@@ -35,11 +35,11 @@ expression: parse_ast
                     },
                     optional_vars: Some(
                         Located {
-                            start: Location {
+                            location: Location {
                                 row: 1,
                                 column: 11,
                             },
-                            end: Location {
+                            end_location: Location {
                                 row: 1,
                                 column: 12,
                             },
@@ -54,11 +54,11 @@ expression: parse_ast
             ],
             body: [
                 Located {
-                    start: Location {
+                    location: Location {
                         row: 1,
                         column: 14,
                     },
-                    end: Location {
+                    end_location: Location {
                         row: 1,
                         column: 18,
                     },

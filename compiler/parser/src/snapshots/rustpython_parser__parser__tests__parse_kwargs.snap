@@ -4,33 +4,33 @@ expression: parse_ast
 ---
 [
     Located {
-        start: Location {
+        location: Location {
             row: 1,
             column: 1,
         },
-        end: Location {
+        end_location: Location {
             row: 1,
             column: 33,
         },
         custom: (),
         node: Expr {
             value: Located {
-                start: Location {
+                location: Location {
                     row: 1,
                     column: 1,
                 },
-                end: Location {
+                end_location: Location {
                     row: 1,
                     column: 33,
                 },
                 custom: (),
                 node: Call {
                     func: Located {
-                        start: Location {
+                        location: Location {
                             row: 1,
                             column: 1,
                         },
-                        end: Location {
+                        end_location: Location {
                             row: 1,
                             column: 8,
                         },
@@ -42,11 +42,11 @@ expression: parse_ast
                     },
                     args: [
                         Located {
-                            start: Location {
+                            location: Location {
                                 row: 1,
                                 column: 10,
                             },
-                            end: Location {
+                            end_location: Location {
                                 row: 1,
                                 column: 21,
                             },
@@ -61,11 +61,11 @@ expression: parse_ast
                     ],
                     keywords: [
                         Located {
-                            start: Location {
+                            location: Location {
                                 row: 1,
                                 column: 23,
                             },
-                            end: Location {
+                            end_location: Location {
                                 row: 1,
                                 column: 32,
                             },
@@ -75,11 +75,11 @@ expression: parse_ast
                                     "keyword",
                                 ),
                                 value: Located {
-                                    start: Location {
+                                    location: Location {
                                         row: 1,
                                         column: 31,
                                     },
-                                    end: Location {
+                                    end_location: Location {
                                         row: 1,
                                         column: 32,
                                     },

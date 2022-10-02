@@ -4,11 +4,11 @@ expression: parse_ast
 ---
 [
     Located {
-        start: Location {
+        location: Location {
             row: 1,
             column: 1,
         },
-        end: Location {
+        end_location: Location {
             row: 1,
             column: 27,
         },
@@ -16,11 +16,11 @@ expression: parse_ast
         node: Assign {
             targets: [
                 Located {
-                    start: Location {
+                    location: Location {
                         row: 1,
                         column: 1,
                     },
-                    end: Location {
+                    end_location: Location {
                         row: 1,
                         column: 2,
                     },
@@ -32,22 +32,22 @@ expression: parse_ast
                 },
             ],
             value: Located {
-                start: Location {
+                location: Location {
                     row: 1,
                     column: 5,
                 },
-                end: Location {
+                end_location: Location {
                     row: 1,
                     column: 27,
                 },
                 custom: (),
                 node: SetComp {
                     elt: Located {
-                        start: Location {
+                        location: Location {
                             row: 1,
                             column: 6,
                         },
-                        end: Location {
+                        end_location: Location {
                             row: 1,
                             column: 7,
                         },
@@ -60,11 +60,11 @@ expression: parse_ast
                     generators: [
                         Comprehension {
                             target: Located {
-                                start: Location {
+                                location: Location {
                                     row: 1,
                                     column: 12,
                                 },
-                                end: Location {
+                                end_location: Location {
                                     row: 1,
                                     column: 13,
                                 },
@@ -75,11 +75,11 @@ expression: parse_ast
                                 },
                             },
                             iter: Located {
-                                start: Location {
+                                location: Location {
                                     row: 1,
                                     column: 18,
                                 },
-                                end: Location {
+                                end_location: Location {
                                     row: 1,
                                     column: 25,
                                 },
@@ -87,11 +87,11 @@ expression: parse_ast
                                 node: Tuple {
                                     elts: [
                                         Located {
-                                            start: Location {
+                                            location: Location {
                                                 row: 1,
                                                 column: 18,
                                             },
-                                            end: Location {
+                                            end_location: Location {
                                                 row: 1,
                                                 column: 19,
                                             },
@@ -104,11 +104,11 @@ expression: parse_ast
                                             },
                                         },
                                         Located {
-                                            start: Location {
+                                            location: Location {
                                                 row: 1,
                                                 column: 21,
                                             },
-                                            end: Location {
+                                            end_location: Location {
                                                 row: 1,
                                                 column: 22,
                                             },
@@ -121,11 +121,11 @@ expression: parse_ast
                                             },
                                         },
                                         Located {
-                                            start: Location {
+                                            location: Location {
                                                 row: 1,
                                                 column: 24,
                                             },
-                                            end: Location {
+                                            end_location: Location {
                                                 row: 1,
                                                 column: 25,
                                             },
