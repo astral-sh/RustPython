@@ -9,22 +9,24 @@ use std::{iter, mem, str};
 
 struct FStringParser<'a> {
     chars: iter::Peekable<str::Chars<'a>>,
-    str_location: Location,
+    str_start: Location,
+    str_end: Location,
     recurse_lvl: u8,
 }
 
 impl<'a> FStringParser<'a> {
-    fn new(source: &'a str, str_location: Location, recurse_lvl: u8) -> Self {
+    fn new(source: &'a str, str_start: Location, str_end: Location, recurse_lvl: u8) -> Self {
         Self {
             chars: source.chars().peekable(),
-            str_location,
+            str_start,
+            str_end,
             recurse_lvl,
         }
     }
 
     #[inline]
     fn expr(&self, node: ExprKind) -> Expr {
-        Expr::new(self.str_location, node)
+        Expr::new(self.str_start, self.str_end, node)
     }
 
     fn parse_formatted_value(&mut self) -> Result<Vec<Expr>, FStringErrorType> {
@@ -108,6 +110,7 @@ impl<'a> FStringParser<'a> {
                                     formatted_value_piece.push(next);
                                     let values = FStringParser::new(
                                         &formatted_value_piece,
+                                        Location::default(),
                                         Location::default(),
                                         &self.recurse_lvl + 1,
                                     )
@@ -300,10 +303,17 @@ fn parse_fstring_expr(source: &str) -> Result<Expr, ParseError> {
 
 /// Parse an fstring from a string, located at a certain position in the sourcecode.
 /// In case of errors, we will get the location and the error returned.
-pub fn parse_located_fstring(source: &str, location: Location) -> Result<Vec<Expr>, FStringError> {
-    FStringParser::new(source, location, 0)
+pub fn parse_located_fstring(
+    source: &str,
+    start: Location,
+    end: Location,
+) -> Result<Vec<Expr>, FStringError> {
+    FStringParser::new(source, start, end, 0)
         .parse()
-        .map_err(|error| FStringError { error, location })
+        .map_err(|error| FStringError {
+            error,
+            location: start,
+        })
 }
 
 #[cfg(test)]
@@ -311,7 +321,7 @@ mod tests {
     use super::*;
 
     fn parse_fstring(source: &str) -> Result<Vec<Expr>, FStringErrorType> {
-        FStringParser::new(source, Location::default(), 0).parse()
+        FStringParser::new(source, Location::default(), Location::default(), 0).parse()
     }
 
     #[test]

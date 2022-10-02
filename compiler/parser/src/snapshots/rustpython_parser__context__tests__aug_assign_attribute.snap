@@ -1,5 +1,5 @@
 ---
-source: compiler/parser/src/parser.rs
+source: compiler/parser/src/context.rs
 expression: parse_ast
 ---
 [
@@ -10,50 +10,66 @@ expression: parse_ast
         },
         end: Location {
             row: 1,
-            column: 24,
+            column: 17,
         },
         custom: (),
-        node: Expr {
-            value: Located {
+        node: AugAssign {
+            target: Located {
                 start: Location {
                     row: 1,
-                    column: 1,
+                    column: 2,
                 },
                 end: Location {
                     row: 1,
-                    column: 24,
+                    column: 4,
                 },
                 custom: (),
-                node: Call {
-                    func: Located {
+                node: Attribute {
+                    value: Located {
                         start: Location {
                             row: 1,
                             column: 1,
                         },
                         end: Location {
                             row: 1,
-                            column: 6,
+                            column: 2,
                         },
                         custom: (),
                         node: Name {
-                            id: "print",
+                            id: "x",
                             ctx: Load,
                         },
                     },
-                    args: [
+                    attr: "y",
+                    ctx: Store,
+                },
+            },
+            op: Add,
+            value: Located {
+                start: Location {
+                    row: 1,
+                    column: 9,
+                },
+                end: Location {
+                    row: 1,
+                    column: 16,
+                },
+                custom: (),
+                node: Tuple {
+                    elts: [
                         Located {
                             start: Location {
                                 row: 1,
-                                column: 8,
+                                column: 9,
                             },
                             end: Location {
                                 row: 1,
-                                column: 20,
+                                column: 10,
                             },
                             custom: (),
                             node: Constant {
-                                value: Str(
-                                    "Hello world",
+                                value: Int(
+                                    1,
                                 ),
                                 kind: None,
                             },
@@ -61,11 +77,11 @@ expression: parse_ast
                         Located {
                             start: Location {
                                 row: 1,
-                                column: 22,
+                                column: 12,
                             },
                             end: Location {
                                 row: 1,
-                                column: 23,
+                                column: 13,
                             },
                             custom: (),
                             node: Constant {
@@ -75,8 +91,25 @@ expression: parse_ast
                                 kind: None,
                             },
                         },
+                        Located {
+                            start: Location {
+                                row: 1,
+                                column: 15,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 16,
+                            },
+                            custom: (),
+                            node: Constant {
+                                value: Int(
+                                    3,
+                                ),
+                                kind: None,
+                            },
+                        },
                     ],
-                    keywords: [],
+                    ctx: Load,
                 },
             },
         },

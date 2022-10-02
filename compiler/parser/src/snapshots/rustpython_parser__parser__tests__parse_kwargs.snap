@@ -1,27 +1,38 @@
 ---
-source: parser/src/parser.rs
+source: compiler/parser/src/parser.rs
 expression: parse_ast
-
 ---
 [
     Located {
-        location: Location {
+        start: Location {
             row: 1,
             column: 1,
+        },
+        end: Location {
+            row: 1,
+            column: 33,
         },
         custom: (),
         node: Expr {
             value: Located {
-                location: Location {
+                start: Location {
                     row: 1,
-                    column: 8,
+                    column: 1,
+                },
+                end: Location {
+                    row: 1,
+                    column: 33,
                 },
                 custom: (),
                 node: Call {
                     func: Located {
-                        location: Location {
+                        start: Location {
                             row: 1,
                             column: 1,
+                        },
+                        end: Location {
+                            row: 1,
+                            column: 8,
                         },
                         custom: (),
                         node: Name {
@@ -31,9 +42,13 @@ expression: parse_ast
                     },
                     args: [
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 10,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 21,
                             },
                             custom: (),
                             node: Constant {
@@ -46,9 +61,13 @@ expression: parse_ast
                     ],
                     keywords: [
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 23,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 32,
                             },
                             custom: (),
                             node: KeywordData {
@@ -56,9 +75,13 @@ expression: parse_ast
                                     "keyword",
                                 ),
                                 value: Located {
-                                    location: Location {
+                                    start: Location {
                                         row: 1,
                                         column: 31,
+                                    },
+                                    end: Location {
+                                        row: 1,
+                                        column: 32,
                                     },
                                     custom: (),
                                     node: Constant {
