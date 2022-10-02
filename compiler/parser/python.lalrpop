@@ -950,7 +950,7 @@ AtomExpr: ast::Expr = {
 
 AtomExpr2: ast::Expr = {
     Atom,
-    <f:AtomExpr2> <start:@L> "(" <a:ArgumentList> ")" <end:@R> => {
+    <start:@L> <f:AtomExpr2> "(" <a:ArgumentList> ")" <end:@R> => {
         ast::Expr {
             start,
             end,
@@ -958,13 +958,13 @@ AtomExpr2: ast::Expr = {
             node: ast::ExprKind::Call { func: Box::new(f), args: a.args, keywords: a.keywords }
         }
     },
-    <e:AtomExpr2> <start:@L> "[" <s:SubscriptList> "]" <end:@R> => ast::Expr {
+    <start:@L> <e:AtomExpr2> "[" <s:SubscriptList> "]" <end:@R> => ast::Expr {
         start,
         end,
         custom: (),
         node: ast::ExprKind::Subscript { value: Box::new(e), slice: Box::new(s), ctx: ast::ExprContext::Load }
     },
-    <e:AtomExpr2> <start:@L> "." <attr:Identifier> <end:@R> => ast::Expr {
+    <start:@L> <e:AtomExpr2> "." <attr:Identifier> <end:@R> => ast::Expr {
         start,
         end,
         custom: (),
