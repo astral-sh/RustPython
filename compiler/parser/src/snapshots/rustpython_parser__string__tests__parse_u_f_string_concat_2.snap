@@ -1,27 +1,39 @@
 ---
-source: parser/src/string.rs
+source: compiler/parser/src/string.rs
 expression: parse_ast
 ---
 [
     Located {
-        location: Location {
+        start: Location {
             row: 1,
             column: 3,
+        },
+        end: Location {
+            row: 1,
+            column: 23,
         },
         custom: (),
         node: Expr {
             value: Located {
-                location: Location {
+                start: Location {
                     row: 1,
                     column: 3,
+                },
+                end: Location {
+                    row: 1,
+                    column: 10,
                 },
                 custom: (),
                 node: JoinedStr {
                     values: [
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 3,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 10,
                             },
                             custom: (),
                             node: Constant {
