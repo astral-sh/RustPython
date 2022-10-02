@@ -41,7 +41,7 @@ expression: parse_ast
                     column: 27,
                 },
                 custom: (),
-                node: ListComp {
+                node: SetComp {
                     elt: Located {
                         start: Location {
                             row: 1,

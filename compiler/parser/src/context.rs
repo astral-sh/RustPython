@@ -2,29 +2,36 @@ use rustpython_ast::{Expr, ExprContext, ExprKind};
 
 pub fn set_context(expr: Expr, ctx: ExprContext) -> Expr {
     match expr.node {
-        ExprKind::Name { id, .. } => Expr::new(expr.location, ExprKind::Name { id, ctx }),
+        ExprKind::Name { id, .. } => Expr::new(expr.start, expr.end, ExprKind::Name { id, ctx }),
         ExprKind::Tuple { elts, .. } => Expr::new(
-            expr.location,
+            expr.start,
+            expr.end,
             ExprKind::Tuple {
                 elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
                 ctx,
             },
         ),
         ExprKind::List { elts, .. } => Expr::new(
-            expr.location,
+            expr.start,
+            expr.end,
             ExprKind::List {
                 elts: elts.into_iter().map(|elt| set_context(elt, ctx)).collect(),
                 ctx,
             },
         ),
-        ExprKind::Attribute { value, attr, .. } => {
-            Expr::new(expr.location, ExprKind::Attribute { value, attr, ctx })
-        }
-        ExprKind::Subscript { value, slice, .. } => {
-            Expr::new(expr.location, ExprKind::Subscript { value, slice, ctx })
-        }
+        ExprKind::Attribute { value, attr, .. } => Expr::new(
+            expr.start,
+            expr.end,
+            ExprKind::Attribute { value, attr, ctx },
+        ),
+        ExprKind::Subscript { value, slice, .. } => Expr::new(
+            expr.start,
+            expr.end,
+            ExprKind::Subscript { value, slice, ctx },
+        ),
         ExprKind::Starred { value, .. } => Expr::new(
-            expr.location,
+            expr.start,
+            expr.end,
             ExprKind::Starred {
                 value: Box::new(set_context(*value, ctx)),
                 ctx,

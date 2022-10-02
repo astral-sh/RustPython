@@ -1,21 +1,29 @@
 ---
-source: parser/src/parser.rs
-expression: parse_program(&source).unwrap()
+source: compiler/parser/src/parser.rs
+expression: "parse_program(source, \"<test>\").unwrap()"
 ---
 [
     Located {
-        location: Location {
+        start: Location {
             row: 1,
             column: 1,
+        },
+        end: Location {
+            row: 5,
+            column: 7,
         },
         custom: (),
         node: ClassDef {
             name: "Foo",
             bases: [
                 Located {
-                    location: Location {
+                    start: Location {
                         row: 1,
                         column: 11,
+                    },
+                    end: Location {
+                        row: 1,
+                        column: 12,
                     },
                     custom: (),
                     node: Name {
@@ -24,9 +32,13 @@ expression: parse_program(&source).unwrap()
                     },
                 },
                 Located {
-                    location: Location {
+                    start: Location {
                         row: 1,
                         column: 14,
+                    },
+                    end: Location {
+                        row: 1,
+                        column: 15,
                     },
                     custom: (),
                     node: Name {
@@ -38,8 +50,12 @@ expression: parse_program(&source).unwrap()
             keywords: [],
             body: [
                 Located {
-                    location: Location {
+                    start: Location {
                         row: 2,
+                        column: 2,
+                    },
+                    end: Location {
+                        row: 4,
                         column: 2,
                     },
                     custom: (),
@@ -49,9 +65,13 @@ expression: parse_program(&source).unwrap()
                             posonlyargs: [],
                             args: [
                                 Located {
-                                    location: Location {
+                                    start: Location {
                                         row: 2,
                                         column: 15,
+                                    },
+                                    end: Location {
+                                        row: 2,
+                                        column: 19,
                                     },
                                     custom: (),
                                     node: ArgData {
@@ -69,9 +89,13 @@ expression: parse_program(&source).unwrap()
                         },
                         body: [
                             Located {
-                                location: Location {
+                                start: Location {
                                     row: 3,
                                     column: 3,
+                                },
+                                end: Location {
+                                    row: 3,
+                                    column: 7,
                                 },
                                 custom: (),
                                 node: Pass,
@@ -83,9 +107,13 @@ expression: parse_program(&source).unwrap()
                     },
                 },
                 Located {
-                    location: Location {
+                    start: Location {
                         row: 4,
                         column: 2,
+                    },
+                    end: Location {
+                        row: 5,
+                        column: 7,
                     },
                     custom: (),
                     node: FunctionDef {
@@ -94,9 +122,13 @@ expression: parse_program(&source).unwrap()
                             posonlyargs: [],
                             args: [
                                 Located {
-                                    location: Location {
+                                    start: Location {
                                         row: 4,
                                         column: 26,
+                                    },
+                                    end: Location {
+                                        row: 4,
+                                        column: 30,
                                     },
                                     custom: (),
                                     node: ArgData {
@@ -106,9 +138,13 @@ expression: parse_program(&source).unwrap()
                                     },
                                 },
                                 Located {
-                                    location: Location {
+                                    start: Location {
                                         row: 4,
                                         column: 32,
+                                    },
+                                    end: Location {
+                                        row: 4,
+                                        column: 35,
                                     },
                                     custom: (),
                                     node: ArgData {
@@ -124,9 +160,13 @@ expression: parse_program(&source).unwrap()
                             kwarg: None,
                             defaults: [
                                 Located {
-                                    location: Location {
+                                    start: Location {
                                         row: 4,
                                         column: 37,
+                                    },
+                                    end: Location {
+                                        row: 4,
+                                        column: 45,
                                     },
                                     custom: (),
                                     node: Constant {
@@ -140,9 +180,13 @@ expression: parse_program(&source).unwrap()
                         },
                         body: [
                             Located {
-                                location: Location {
+                                start: Location {
                                     row: 5,
                                     column: 3,
+                                },
+                                end: Location {
+                                    row: 5,
+                                    column: 7,
                                 },
                                 custom: (),
                                 node: Pass,

@@ -4,23 +4,35 @@ expression: parse_ast
 ---
 [
     Located {
-        location: Location {
+        start: Location {
             row: 1,
             column: 1,
+        },
+        end: Location {
+            row: 1,
+            column: 18,
         },
         custom: (),
         node: AugAssign {
             target: Located {
-                location: Location {
+                start: Location {
                     row: 1,
                     column: 2,
+                },
+                end: Location {
+                    row: 1,
+                    column: 5,
                 },
                 custom: (),
                 node: Subscript {
                     value: Located {
-                        location: Location {
+                        start: Location {
                             row: 1,
                             column: 1,
+                        },
+                        end: Location {
+                            row: 1,
+                            column: 2,
                         },
                         custom: (),
                         node: Name {
@@ -29,9 +41,13 @@ expression: parse_ast
                         },
                     },
                     slice: Located {
-                        location: Location {
+                        start: Location {
                             row: 1,
                             column: 3,
+                        },
+                        end: Location {
+                            row: 1,
+                            column: 4,
                         },
                         custom: (),
                         node: Name {
@@ -44,17 +60,25 @@ expression: parse_ast
             },
             op: Add,
             value: Located {
-                location: Location {
+                start: Location {
                     row: 1,
                     column: 10,
+                },
+                end: Location {
+                    row: 1,
+                    column: 17,
                 },
                 custom: (),
                 node: Tuple {
                     elts: [
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 10,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 11,
                             },
                             custom: (),
                             node: Constant {
@@ -65,9 +89,13 @@ expression: parse_ast
                             },
                         },
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 13,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 14,
                             },
                             custom: (),
                             node: Constant {
@@ -78,9 +106,13 @@ expression: parse_ast
                             },
                         },
                         Located {
-                            location: Location {
+                            start: Location {
                                 row: 1,
                                 column: 16,
+                            },
+                            end: Location {
+                                row: 1,
+                                column: 17,
                             },
                             custom: (),
                             node: Constant {

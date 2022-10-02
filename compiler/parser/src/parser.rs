@@ -45,11 +45,13 @@ pub fn parse_program_tokens(
 /// assert_eq!(
 ///     expr,
 ///     ast::Expr {
-///         location: ast::Location::new(1, 3),
+///         start: ast::Location::new(1, 3),
+///         end: ast::Location::new(1, 6),
 ///         custom: (),
 ///         node: ast::ExprKind::BinOp {
 ///             left: Box::new(ast::Expr {
-///                 location: ast::Location::new(1, 1),
+///                 start: ast::Location::new(1, 1),
+///                 end: ast::Location::new(1, 2),
 ///                 custom: (),
 ///                 node: ast::ExprKind::Constant {
 ///                     value: ast::Constant::Int(1.into()),
@@ -58,7 +60,8 @@ pub fn parse_program_tokens(
 ///             }),
 ///             op: ast::Operator::Add,
 ///             right: Box::new(ast::Expr {
-///                 location: ast::Location::new(1, 5),
+///                 start: ast::Location::new(1, 5),
+///                 end: ast::Location::new(1, 6),
 ///                 custom: (),
 ///                 node: ast::ExprKind::Constant {
 ///                     value: ast::Constant::Int(2.into()),
