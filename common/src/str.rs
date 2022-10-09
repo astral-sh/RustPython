@@ -354,12 +354,12 @@ impl fmt::Display for Repr<'_> {
 
 /// returns the outer quotes to use and the number of quotes that need to be escaped
 pub(crate) fn choose_quotes_for_repr(num_squotes: usize, num_dquotes: usize) -> (char, usize) {
-    // always use squote unless we have squotes but no dquotes
-    let use_dquote = num_squotes > 0 && num_dquotes == 0;
-    if use_dquote {
-        ('"', num_dquotes)
-    } else {
+    // always use dquote unless we have dquotes but no squotes
+    let use_squote = num_dquotes > 0 && num_squotes == 0;
+    if use_squote {
         ('\'', num_squotes)
+    } else {
+        ('"', num_dquotes)
     }
 }
 
