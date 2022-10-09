@@ -1,4 +1,5 @@
 use self::types::{PyBaseException, PyBaseExceptionRef};
+use crate::builtins::tuple::IntoPyTuple;
 use crate::common::lock::PyRwLock;
 use crate::{
     builtins::{
@@ -752,18 +753,28 @@ impl ExceptionZoo {
         let errno_getter =
             ctx.new_readonly_getset("errno", excs.os_error, |exc: PyBaseExceptionRef| {
                 let args = exc.args();
-                args.get(0).filter(|_| args.len() > 1).cloned()
+                args.get(0)
+                    .filter(|_| args.len() > 1 && args.len() <= 5)
+                    .cloned()
+            });
+        let strerror_getter =
+            ctx.new_readonly_getset("strerror", excs.os_error, |exc: PyBaseExceptionRef| {
+                let args = exc.args();
+                args.get(1)
+                    .filter(|_| args.len() >= 2 && args.len() <= 5)
+                    .cloned()
             });
         extend_exception!(PyOSError, ctx, excs.os_error, {
             // POSIX exception code
             "errno" => errno_getter.clone(),
             // exception strerror
-            "strerror" => ctx.new_readonly_getset("strerror", excs.os_error, make_arg_getter(1)),
+            "strerror" => strerror_getter.clone(),
             // exception filename
             "filename" => ctx.none(),
             // second exception filename
             "filename2" => ctx.none(),
             "__str__" => ctx.new_method("__str__", excs.os_error, os_error_str),
+            "__reduce__" => ctx.new_method("__reduce__", excs.os_error, os_error_reduce),
         });
         // TODO: this isn't really accurate
         #[cfg(windows)]
@@ -896,6 +907,42 @@ fn os_error_str(exc: PyBaseExceptionRef, vm: &VirtualMachine) -> PyResult<PyStrR
     } else {
         Ok(exc.str(vm))
     }
+}
+
+fn os_error_reduce(exc: PyBaseExceptionRef, vm: &VirtualMachine) -> PyTupleRef {
+    let args = exc.args();
+    let obj = exc.as_object().to_owned();
+    let mut result: Vec<PyObjectRef> = vec![obj.class().clone().into()];
+
+    if args.len() >= 2 && args.len() <= 5 {
+        // SAFETY: len() == 2 is checked so get_arg 1 or 2 won't panic
+        let errno = exc.get_arg(0).unwrap();
+        let msg = exc.get_arg(1).unwrap();
+
+        if let Ok(filename) = obj.get_attr("filename", vm) {
+            if !vm.is_none(&filename) {
+                let mut args_reduced: Vec<PyObjectRef> = vec![errno, msg, filename];
+
+                if let Ok(filename2) = obj.get_attr("filename2", vm) {
+                    if !vm.is_none(&filename2) {
+                        args_reduced.push(filename2);
+                    }
+                }
+                result.push(args_reduced.into_pytuple(vm).into());
+            } else {
+                result.push(vm.new_tuple((errno, msg)).into());
+            }
+        } else {
+            result.push(vm.new_tuple((errno, msg)).into());
+        }
+    } else {
+        result.push(args.into());
+    }
+
+    if let Some(dict) = obj.dict().filter(|x| !x.is_empty()) {
+        result.push(dict.into());
+    }
+    result.into_pytuple(vm)
 }
 
 fn system_exit_code(exc: PyBaseExceptionRef) -> Option<PyObjectRef> {
@@ -1260,7 +1307,7 @@ pub(super) mod types {
         os_error,
         "Base class for I/O related errors.",
         os_error_new,
-        base_exception_init,
+        os_error_init,
     }
     #[cfg(not(target_arch = "wasm32"))]
     fn os_error_optional_new(
@@ -1268,7 +1315,7 @@ pub(super) mod types {
         vm: &VirtualMachine,
     ) -> Option<PyBaseExceptionRef> {
         let len = args.len();
-        if len >= 2 {
+        if (2..=5).contains(&len) {
             let errno = &args[0];
             errno
                 .payload_if_subclass::<PyInt>(vm)
@@ -1297,9 +1344,18 @@ pub(super) mod types {
     fn os_error_new(cls: PyTypeRef, args: FuncArgs, vm: &VirtualMachine) -> PyResult {
         PyBaseException::slot_new(cls, args, vm)
     }
+    fn os_error_init(zelf: PyObjectRef, args: FuncArgs, vm: &VirtualMachine) -> PyResult<()> {
+        let len = args.args.len();
+        let mut new_args = args;
+        if (3..=5).contains(&len) {
+            zelf.set_attr("filename", new_args.args[2].clone(), vm)?;
+            if len == 5 {
+                zelf.set_attr("filename2", new_args.args[4].clone(), vm)?;
+            }
 
-    fn base_exception_init(zelf: PyObjectRef, args: FuncArgs, vm: &VirtualMachine) -> PyResult<()> {
-        PyBaseException::init(zelf, args, vm)
+            new_args.args.truncate(2);
+        }
+        PyBaseException::init(zelf, new_args, vm)
     }
 
     define_exception! {
