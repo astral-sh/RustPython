@@ -212,12 +212,10 @@ impl PyObject {
                         .mro_find_map(|cls| cls.slots.descr_set.load())
                         .is_some()
                     {
-                        drop(descr_cls);
-                        let cls = obj_cls.into_owned().into();
+                        let cls = obj_cls.to_owned().into();
                         return descr_get(descr, Some(self.to_owned()), Some(cls), vm).map(Some);
                     }
                 }
-                drop(descr_cls);
                 Some((descr, descr_get))
             }
             None => None,
@@ -236,7 +234,7 @@ impl PyObject {
         } else if let Some((attr, descr_get)) = cls_attr {
             match descr_get {
                 Some(descr_get) => {
-                    let cls = obj_cls.into_owned().into();
+                    let cls = obj_cls.to_owned().into();
                     descr_get(attr, Some(self.to_owned()), Some(cls), vm).map(Some)
                 }
                 None => Ok(Some(attr)),
@@ -278,7 +276,7 @@ impl PyObject {
         let is_strict_subclass = {
             let self_class = self.class();
             let other_class = other.class();
-            !self_class.is(&other_class) && other_class.fast_issubclass(&self_class)
+            !self_class.is(other_class) && other_class.fast_issubclass(self_class)
         };
         if is_strict_subclass {
             let res = vm.with_recursion("in comparison", || call_cmp(other, self, swapped))?;
@@ -456,7 +454,7 @@ impl PyObject {
                 vm,
                 self.to_owned().get_attr(identifier!(vm, __class__), vm)?,
             ) {
-                if icls.is(&self.class()) {
+                if icls.is(self.class()) {
                     Ok(false)
                 } else {
                     Ok(icls.fast_issubclass(&typ))
@@ -539,8 +537,8 @@ impl PyObject {
     // int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
     pub fn length_opt(&self, vm: &VirtualMachine) -> Option<PyResult<usize>> {
-        PySequence::new(self, vm)
-            .and_then(|seq| seq.length_opt(vm))
+        self.to_sequence(vm)
+            .length_opt(vm)
             .or_else(|| PyMapping::new(self, vm).and_then(|mapping| mapping.length_opt(vm)))
     }
 
@@ -568,7 +566,8 @@ impl PyObject {
         } else {
             if self.class().fast_issubclass(vm.ctx.types.type_type) {
                 if self.is(vm.ctx.types.type_type) {
-                    return PyGenericAlias::new(self.class().clone(), needle, vm).to_pyresult(vm);
+                    return PyGenericAlias::new(self.class().to_owned(), needle, vm)
+                        .to_pyresult(vm);
                 }
 
                 if let Some(class_getitem) =
@@ -597,11 +596,10 @@ impl PyObject {
                 return f(&mapping, &needle, Some(value), vm);
             }
         }
-        if let Some(seq) = PySequence::new(self, vm) {
-            if let Some(f) = seq.methods.ass_item {
-                let i = needle.key_as_isize(vm)?;
-                return f(&seq, i, Some(value), vm);
-            }
+        let seq = self.to_sequence(vm);
+        if let Some(f) = seq.methods.ass_item.load() {
+            let i = needle.key_as_isize(vm)?;
+            return f(seq, i, Some(value), vm);
         }
 
         Err(vm.new_type_error(format!(
@@ -621,11 +619,10 @@ impl PyObject {
                 return f(&mapping, &needle, None, vm);
             }
         }
-        if let Some(seq) = PySequence::new(self, vm) {
-            if let Some(f) = seq.methods.ass_item {
-                let i = needle.key_as_isize(vm)?;
-                return f(&seq, i, None, vm);
-            }
+        let seq = self.to_sequence(vm);
+        if let Some(f) = seq.methods.ass_item.load() {
+            let i = needle.key_as_isize(vm)?;
+            return f(seq, i, None, vm);
         }
 
         Err(vm.new_type_error(format!("'{}' does not support item deletion", self.class())))

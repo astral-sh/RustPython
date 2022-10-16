@@ -5,6 +5,7 @@ use super::{
     builtins_iter, IterStatus, PositionIterInternal, PyDict, PyDictRef, PyGenericAlias, PyTupleRef,
     PyType, PyTypeRef,
 };
+use crate::atomic_func;
 use crate::common::{ascii, hash::PyHash, lock::PyMutex, rc::PyRc};
 use crate::{
     class::PyClassImpl,
@@ -484,7 +485,7 @@ fn reduce_set(
     vm: &VirtualMachine,
 ) -> PyResult<(PyTypeRef, PyTupleRef, Option<PyDictRef>)> {
     Ok((
-        zelf.class().clone(),
+        zelf.class().to_owned(),
         vm.new_tuple((extract_set(zelf)
             .unwrap_or(&PySetInner::default())
             .elements(),)),
@@ -764,11 +765,16 @@ impl Initializer for PySet {
 }
 
 impl AsSequence for PySet {
-    const AS_SEQUENCE: PySequenceMethods = PySequenceMethods {
-        length: Some(|seq, _vm| Ok(Self::sequence_downcast(seq).len())),
-        contains: Some(|seq, needle, vm| Self::sequence_downcast(seq).inner.contains(needle, vm)),
-        ..PySequenceMethods::NOT_IMPLEMENTED
-    };
+    fn as_sequence() -> &'static PySequenceMethods {
+        static AS_SEQUENCE: PySequenceMethods = PySequenceMethods {
+            length: atomic_func!(|seq, _vm| Ok(PySet::sequence_downcast(seq).len())),
+            contains: atomic_func!(|seq, needle, vm| PySet::sequence_downcast(seq)
+                .inner
+                .contains(needle, vm)),
+            ..PySequenceMethods::NOT_IMPLEMENTED
+        };
+        &AS_SEQUENCE
+    }
 }
 
 impl Comparable for PySet {
@@ -981,11 +987,16 @@ impl PyFrozenSet {
 }
 
 impl AsSequence for PyFrozenSet {
-    const AS_SEQUENCE: PySequenceMethods = PySequenceMethods {
-        length: Some(|seq, _vm| Ok(Self::sequence_downcast(seq).len())),
-        contains: Some(|seq, needle, vm| Self::sequence_downcast(seq).inner.contains(needle, vm)),
-        ..PySequenceMethods::NOT_IMPLEMENTED
-    };
+    fn as_sequence() -> &'static PySequenceMethods {
+        static AS_SEQUENCE: PySequenceMethods = PySequenceMethods {
+            length: atomic_func!(|seq, _vm| Ok(PyFrozenSet::sequence_downcast(seq).len())),
+            contains: atomic_func!(|seq, needle, vm| PyFrozenSet::sequence_downcast(seq)
+                .inner
+                .contains(needle, vm)),
+            ..PySequenceMethods::NOT_IMPLEMENTED
+        };
+        &AS_SEQUENCE
+    }
 }
 
 impl Hashable for PyFrozenSet {
@@ -1045,8 +1056,6 @@ impl TryFromObject for AnySet {
         if class.fast_issubclass(vm.ctx.types.set_type)
             || class.fast_issubclass(vm.ctx.types.frozenset_type)
         {
-            // the class lease needs to be drop to be able to return the object
-            drop(class);
             Ok(AnySet { object: obj })
         } else {
             Err(vm.new_type_error(format!("{} is not a subtype of set or frozenset", class)))

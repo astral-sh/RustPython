@@ -2,40 +2,32 @@ use super::{
     mappingproxy::PyMappingProxy, object, union_, PyClassMethod, PyDictRef, PyList, PyStaticMethod,
     PyStr, PyStrInterned, PyStrRef, PyTuple, PyTupleRef, PyWeak,
 };
+use crate::common::{
+    ascii,
+    borrow::BorrowedValue,
+    lock::{PyRwLock, PyRwLockReadGuard},
+};
 use crate::{
-    builtins::PyBaseExceptionRef,
     builtins::{
-        descriptor::{MemberGetter, MemberSetter},
+        descriptor::{
+            DescrObject, MemberDef, MemberDescrObject, MemberGetter, MemberKind, MemberSetter,
+        },
         function::PyCellRef,
-        tuple::PyTupleTyped,
+        tuple::{IntoPyTuple, PyTupleTyped},
+        PyBaseExceptionRef,
     },
     class::{PyClassImpl, StaticType},
     convert::ToPyObject,
     function::{FuncArgs, KwArgs, OptionalArg, PySetterValue},
     identifier,
-    protocol::PyNumberMethods,
+    protocol::{PyIterReturn, PyNumberMethods, PySequenceMethods},
     types::{Callable, GetAttr, PyTypeFlags, PyTypeSlots, SetAttr},
     AsObject, Context, Py, PyObjectRef, PyPayload, PyRef, PyResult, TryFromObject, VirtualMachine,
-};
-use crate::{
-    builtins::{
-        descriptor::{DescrObject, MemberDef, MemberDescrObject, MemberKind},
-        tuple::IntoPyTuple,
-    },
-    common::{
-        ascii,
-        borrow::BorrowedValue,
-        lock::{PyRwLock, PyRwLockReadGuard},
-    },
-    protocol::PyIterReturn,
 };
 use indexmap::{map::Entry, IndexMap};
 use itertools::Itertools;
 use std::{borrow::Borrow, collections::HashSet, fmt, ops::Deref, pin::Pin, ptr::NonNull};
 
-/// type(object_or_name, bases, dict)
-/// type(object) -> the object's type
-/// type(name, bases, dict) -> a new type
 #[pyclass(module = false, name = "type")]
 pub struct PyType {
     pub base: Option<PyTypeRef>,
@@ -49,8 +41,9 @@ pub struct PyType {
 
 #[derive(Default)]
 pub struct HeapTypeExt {
-    pub number_methods: PyNumberMethods,
     pub slots: Option<PyTupleTyped<PyStrRef>>,
+    pub number_methods: PyNumberMethods,
+    pub sequence_methods: PySequenceMethods,
 }
 
 pub struct PointerSlot<T>(NonNull<T>);
@@ -125,13 +118,18 @@ impl PyPayload for PyType {
 }
 
 impl PyType {
-    pub fn new_simple_ref(name: &str, base: &PyTypeRef) -> Result<PyRef<Self>, String> {
+    pub fn new_simple_ref(
+        name: &str,
+        base: &PyTypeRef,
+        ctx: &Context,
+    ) -> Result<PyRef<Self>, String> {
         Self::new_ref(
             name,
             vec![base.clone()],
             Default::default(),
             Default::default(),
             Self::static_type().to_owned(),
+            ctx,
         )
     }
     pub fn new_ref(
@@ -140,6 +138,7 @@ impl PyType {
         attrs: PyAttributes,
         slots: PyTypeSlots,
         metaclass: PyRef<Self>,
+        ctx: &Context,
     ) -> Result<PyRef<Self>, String> {
         Self::new_verbose_ref(
             name,
@@ -149,8 +148,11 @@ impl PyType {
             slots,
             HeapTypeExt::default(),
             metaclass,
+            ctx,
         )
     }
+
+    #[allow(clippy::too_many_arguments)]
     fn new_verbose_ref(
         name: &str,
         base: PyRef<Self>,
@@ -159,6 +161,7 @@ impl PyType {
         mut slots: PyTypeSlots,
         heaptype_ext: HeapTypeExt,
         metaclass: PyRef<Self>,
+        ctx: &Context,
     ) -> Result<PyRef<Self>, String> {
         // Check for duplicates in bases.
         let mut unique_bases = HashSet::new();
@@ -170,7 +173,7 @@ impl PyType {
 
         let mros = bases
             .iter()
-            .map(|x| x.iter_mro().cloned().collect())
+            .map(|x| x.iter_mro().map(|x| x.to_owned()).collect())
             .collect();
         let mro = linearise_mro(mros)?;
 
@@ -179,6 +182,25 @@ impl PyType {
         }
 
         *slots.name.get_mut() = Some(String::from(name));
+
+        #[allow(clippy::mutable_key_type)]
+        let mut slot_name_set = HashSet::new();
+
+        for cls in mro.iter() {
+            for &name in cls.attributes.read().keys() {
+                if name != identifier!(ctx, __new__)
+                    && name.as_str().starts_with("__")
+                    && name.as_str().ends_with("__")
+                {
+                    slot_name_set.insert(name);
+                }
+            }
+        }
+        for &name in attrs.keys() {
+            if name.as_str().starts_with("__") && name.as_str().ends_with("__") {
+                slot_name_set.insert(name);
+            }
+        }
 
         let new_type = PyRef::new_ref(
             PyType {
@@ -194,11 +216,53 @@ impl PyType {
             None,
         );
 
-        for attr_name in new_type.attributes.read().keys() {
-            if attr_name.as_str().starts_with("__") && attr_name.as_str().ends_with("__") {
-                new_type.update_slot(attr_name, true);
-            }
+        for attr_name in slot_name_set {
+            new_type.update_slot::<true>(attr_name, ctx);
         }
+
+        let weakref_type = super::PyWeak::static_type();
+        for base in &new_type.bases {
+            base.subclasses.write().push(
+                new_type
+                    .as_object()
+                    .downgrade_with_weakref_typ_opt(None, weakref_type.to_owned())
+                    .unwrap(),
+            );
+        }
+
+        Ok(new_type)
+    }
+
+    pub fn new_bare_ref(
+        name: &str,
+        base: PyRef<Self>,
+        attrs: PyAttributes,
+        mut slots: PyTypeSlots,
+        metaclass: PyRef<Self>,
+    ) -> Result<PyRef<Self>, String> {
+        if base.slots.flags.has_feature(PyTypeFlags::HAS_DICT) {
+            slots.flags |= PyTypeFlags::HAS_DICT
+        }
+
+        *slots.name.get_mut() = Some(String::from(name));
+
+        let bases = vec![base.clone()];
+        let mro = base.iter_mro().map(|x| x.to_owned()).collect();
+
+        let new_type = PyRef::new_ref(
+            PyType {
+                base: Some(base),
+                bases,
+                mro,
+                subclasses: PyRwLock::default(),
+                attributes: PyRwLock::new(attrs),
+                slots,
+                heaptype_ext: None,
+            },
+            metaclass,
+            None,
+        );
+
         let weakref_type = super::PyWeak::static_type();
         for base in &new_type.bases {
             base.subclasses.write().push(
@@ -289,7 +353,7 @@ impl PyType {
     }
 }
 
-impl PyTypeRef {
+impl Py<PyType> {
     /// Determines if `subclass` is actually a subclass of `cls`, this doesn't call __subclasscheck__,
     /// so only use this if `cls` is known to have not overridden the base __subclasscheck__ magic
     /// method.
@@ -297,12 +361,12 @@ impl PyTypeRef {
         self.as_object().is(cls.borrow()) || self.mro.iter().any(|c| c.is(cls.borrow()))
     }
 
-    pub fn iter_mro(&self) -> impl Iterator<Item = &PyTypeRef> + DoubleEndedIterator {
-        std::iter::once(self).chain(self.mro.iter())
+    pub fn iter_mro(&self) -> impl Iterator<Item = &Py<PyType>> + DoubleEndedIterator {
+        std::iter::once(self).chain(self.mro.iter().map(|x| x.deref()))
     }
 
-    pub fn iter_base_chain(&self) -> impl Iterator<Item = &PyTypeRef> {
-        std::iter::successors(Some(self), |cls| cls.base.as_ref())
+    pub fn iter_base_chain(&self) -> impl Iterator<Item = &Py<PyType>> {
+        std::iter::successors(Some(self), |cls| cls.base.as_deref())
     }
 }
 
@@ -505,7 +569,7 @@ impl PyType {
 
     #[pymethod]
     fn mro(zelf: PyRef<Self>) -> Vec<PyObjectRef> {
-        zelf.iter_mro().map(|cls| cls.clone().into()).collect()
+        zelf.iter_mro().map(|cls| cls.to_owned().into()).collect()
     }
 
     #[pymethod(magic)]
@@ -524,7 +588,7 @@ impl PyType {
 
         let is_type_type = metatype.is(vm.ctx.types.type_type);
         if is_type_type && args.args.len() == 1 && args.kwargs.is_empty() {
-            return Ok(args.args[0].class().clone().into());
+            return Ok(args.args[0].class().to_owned().into());
         }
 
         if args.args.len() != 3 {
@@ -683,6 +747,7 @@ impl PyType {
             slots,
             heaptype_ext,
             metatype,
+            &vm.ctx,
         )
         .map_err(|e| vm.new_type_error(e))?;
 
@@ -856,7 +921,7 @@ impl GetAttr for PyType {
             if has_descr_set {
                 let descr_get = attr_class.mro_find_map(|cls| cls.slots.descr_get.load());
                 if let Some(descr_get) = descr_get {
-                    let mcl = mcl.into_owned().into();
+                    let mcl = mcl.to_owned().into();
                     return descr_get(attr.clone(), Some(zelf.to_owned().into()), Some(mcl), vm);
                 }
             }
@@ -867,7 +932,6 @@ impl GetAttr for PyType {
         if let Some(ref attr) = zelf_attr {
             let descr_get = attr.class().mro_find_map(|cls| cls.slots.descr_get.load());
             if let Some(descr_get) = descr_get {
-                drop(mcl);
                 return descr_get(attr.clone(), None, Some(zelf.to_owned().into()), vm);
             }
         }
@@ -875,7 +939,6 @@ impl GetAttr for PyType {
         if let Some(cls_attr) = zelf_attr {
             Ok(cls_attr)
         } else if let Some(attr) = mcl_attr {
-            drop(mcl);
             vm.call_if_get_descriptor(attr, zelf.to_owned().into())
         } else {
             return Err(attribute_error(zelf, name_str.as_str(), vm));
@@ -913,7 +976,11 @@ impl SetAttr for PyType {
             }
         }
         if attr_name.as_str().starts_with("__") && attr_name.as_str().ends_with("__") {
-            zelf.update_slot(attr_name, assign);
+            if assign {
+                zelf.update_slot::<true>(attr_name, &vm.ctx);
+            } else {
+                zelf.update_slot::<false>(attr_name, &vm.ctx);
+            }
         }
         Ok(())
     }
@@ -938,7 +1005,7 @@ impl Callable for PyType {
     }
 }
 
-fn find_base_dict_descr(cls: &PyTypeRef, vm: &VirtualMachine) -> Option<PyObjectRef> {
+fn find_base_dict_descr(cls: &Py<PyType>, vm: &VirtualMachine) -> Option<PyObjectRef> {
     cls.iter_base_chain().skip(1).find_map(|cls| {
         // TODO: should actually be some translation of:
         // cls.slot_dictoffset != 0 && !cls.flags.contains(HEAPTYPE)
@@ -952,12 +1019,11 @@ fn find_base_dict_descr(cls: &PyTypeRef, vm: &VirtualMachine) -> Option<PyObject
 
 fn subtype_get_dict(obj: PyObjectRef, vm: &VirtualMachine) -> PyResult {
     // TODO: obj.class().as_pyref() need to be supported
-    let cls = obj.class().clone();
-    let ret = match find_base_dict_descr(&cls, vm) {
-        Some(descr) => vm.call_get_descriptor(descr, obj).unwrap_or_else(|_| {
+    let ret = match find_base_dict_descr(obj.class(), vm) {
+        Some(descr) => vm.call_get_descriptor(descr, obj).unwrap_or_else(|obj| {
             Err(vm.new_type_error(format!(
                 "this __dict__ descriptor does not support '{}' objects",
-                cls.name()
+                obj.class()
             )))
         })?,
         None => object::object_get_dict(obj, vm)?.into(),
@@ -966,8 +1032,8 @@ fn subtype_get_dict(obj: PyObjectRef, vm: &VirtualMachine) -> PyResult {
 }
 
 fn subtype_set_dict(obj: PyObjectRef, value: PyObjectRef, vm: &VirtualMachine) -> PyResult<()> {
-    let cls = obj.class().clone();
-    match find_base_dict_descr(&cls, vm) {
+    let cls = obj.class();
+    match find_base_dict_descr(cls, vm) {
         Some(descr) => {
             let descr_set = descr
                 .class()
@@ -1083,10 +1149,10 @@ fn calculate_meta_class(
     let mut winner = metatype;
     for base in bases {
         let base_type = base.class();
-        if winner.fast_issubclass(&base_type) {
+        if winner.fast_issubclass(base_type) {
             continue;
         } else if base_type.fast_issubclass(&winner) {
-            winner = base_type.into_owned();
+            winner = base_type.to_owned();
             continue;
         }
 
@@ -1167,6 +1233,7 @@ mod tests {
             PyAttributes::default(),
             Default::default(),
             type_type.clone(),
+            &context,
         )
         .unwrap();
         let b = PyType::new_ref(
@@ -1175,6 +1242,7 @@ mod tests {
             PyAttributes::default(),
             Default::default(),
             type_type,
+            &context,
         )
         .unwrap();
 

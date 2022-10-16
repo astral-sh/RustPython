@@ -422,6 +422,7 @@ impl Context {
             attrs,
             slots,
             self.types.type_type.to_owned(),
+            self,
         )
         .unwrap()
     }
@@ -446,6 +447,7 @@ impl Context {
             attrs,
             PyBaseException::make_slots(),
             self.types.type_type.to_owned(),
+            self,
         )
         .unwrap()
     }
@@ -462,13 +464,14 @@ impl Context {
     pub fn new_member(
         &self,
         name: &str,
+        member_kind: MemberKind,
         getter: fn(&VirtualMachine, PyObjectRef) -> PyResult,
         setter: MemberSetterFunc,
         class: &'static Py<PyType>,
     ) -> PyRef<MemberDescrObject> {
         let member_def = MemberDef {
             name: name.to_owned(),
-            kind: MemberKind::ObjectEx,
+            kind: member_kind,
             getter: MemberGetter::Getter(getter),
             setter: MemberSetter::Setter(setter),
             doc: None,
