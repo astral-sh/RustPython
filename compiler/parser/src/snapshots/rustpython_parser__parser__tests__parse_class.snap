@@ -162,7 +162,7 @@ expression: "parse_program(source, \"<test>\").unwrap()"
                                 Located {
                                     location: Location {
                                         row: 4,
-                                        column: 37,
+                                        column: 36,
                                     },
                                     end_location: Location {
                                         row: 4,

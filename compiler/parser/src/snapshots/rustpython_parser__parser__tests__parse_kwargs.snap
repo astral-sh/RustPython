@@ -44,7 +44,7 @@ expression: parse_ast
                         Located {
                             location: Location {
                                 row: 1,
-                                column: 10,
+                                column: 9,
                             },
                             end_location: Location {
                                 row: 1,
