@@ -57,11 +57,11 @@ expression: parse_ast
                                     value: Located {
                                         location: Location {
                                             row: 1,
-                                            column: 3,
+                                            column: 2,
                                         },
                                         end_location: Location {
                                             row: 1,
-                                            column: 7,
+                                            column: 6,
                                         },
                                         custom: (),
                                         node: Name {

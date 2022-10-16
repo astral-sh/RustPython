@@ -2,7 +2,9 @@ use rustpython_ast::{Expr, ExprContext, ExprKind};
 
 pub fn set_context(expr: Expr, ctx: ExprContext) -> Expr {
     match expr.node {
-        ExprKind::Name { id, .. } => Expr::new(expr.location, expr.end_location, ExprKind::Name { id, ctx }),
+        ExprKind::Name { id, .. } => {
+            Expr::new(expr.location, expr.end_location, ExprKind::Name { id, ctx })
+        }
         ExprKind::Tuple { elts, .. } => Expr::new(
             expr.location,
             expr.end_location,
