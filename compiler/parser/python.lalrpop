@@ -519,7 +519,7 @@ ClosedPattern: ast::Pattern = {
 
 SequencePattern: ast::PatternKind = {
     // A single-item tuple is a special case: it's a group pattern, _not_ a sequence pattern.
-    <location:@L> "(" <pattern:Pattern> ")" <end_location:@R> => pattern.node,
+    <location:@L> "(" <pattern:Pattern> ")" <end_location:@R> => pattern.into_node(),
     <location:@L> "(" ")" <end_location:@R> => ast::PatternKind::MatchSequence {
         patterns: vec![],
     },
@@ -1554,7 +1554,7 @@ Atom<Goal>: ast::Expr = {
     },
     <location:@L> "(" <left:(<OneOrMore<Test<"all">>> ",")?> <mid:NamedOrStarExpr> <right:("," <TestOrStarNamedExpr>)*> <trailing_comma:","?> ")" <end_location:@R> =>? {
         if left.is_none() && right.is_empty() && trailing_comma.is_none() {
-            if matches!(mid.node, ast::ExprKind::Starred { .. }) {
+            if matches!(mid.node(), ast::ExprKind::Starred { .. }) {
                 Err(LexicalError{
                     error: LexicalErrorType::OtherError("cannot use starred expression here".to_string()),
                     location: mid.start(),

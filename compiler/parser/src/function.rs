@@ -146,7 +146,7 @@ pub(crate) fn parse_args(func_args: Vec<FunctionArgument>) -> Result<ArgumentLis
 
 // Check if an expression is a starred expression.
 fn is_starred(exp: &ast::Expr) -> bool {
-    matches!(exp.node, ast::ExprKind::Starred { .. })
+    matches!(exp.node(), ast::ExprKind::Starred { .. })
 }
 
 #[cfg(test)]
