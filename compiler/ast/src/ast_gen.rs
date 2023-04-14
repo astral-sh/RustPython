@@ -27,6 +27,7 @@ impl<T, U> Located<T, U> {
         }
     }
 
+    /// Creates a new node that spans the position specified by `range`.
     pub fn with_range(node: T, range: TextRange) -> Self
     where
         U: Default,
@@ -38,6 +39,7 @@ impl<T, U> Located<T, U> {
         }
     }
 
+    /// Returns the absolute start position of the node from the beginning of the document.
     #[inline]
     pub const fn start(&self) -> TextSize {
         self.range.start()
@@ -48,11 +50,13 @@ impl<T, U> Located<T, U> {
         &self.custom
     }
 
+    /// Returns the node
     #[inline]
     pub fn node(&self) -> &T {
         &self.node
     }
 
+    /// Consumes self and returns the node.
     #[inline]
     pub fn into_node(self) -> T {
         self.node
@@ -63,11 +67,13 @@ impl<T, U> Located<T, U> {
         self.custom
     }
 
+    /// Returns the `range` of the node. The range offsets are absolute to the start of the document.
     #[inline]
     pub const fn range(&self) -> TextRange {
         self.range
     }
 
+    /// Returns the absolute position at which the node ends in the source document.
     #[inline]
     pub const fn end(&self) -> TextSize {
         self.range.end()
