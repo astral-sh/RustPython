@@ -13,11 +13,12 @@
 //! [`Mode`]: crate::mode
 
 use crate::{
-    ast::{self, Location},
+    ast::{self},
     lexer::{self, LexResult, LexicalError, LexicalErrorType},
     mode::Mode,
     python,
     token::Tok,
+    Location,
 };
 use itertools::Itertools;
 use std::iter;
@@ -224,6 +225,7 @@ fn parse_error_from_lalrpop(
     source_path: &str,
 ) -> ParseError {
     let source_path = source_path.to_owned();
+
     match err {
         // TODO: Are there cases where this isn't an EOF?
         LalrpopError::InvalidToken { location } => ParseError {

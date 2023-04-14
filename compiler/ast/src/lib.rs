@@ -6,6 +6,4 @@ mod impls;
 
 pub use ast_gen::*;
 
-pub use ruff_text_size::TextSize as Location;
-
 pub type Suite<U = ()> = Vec<Stmt<U>>;

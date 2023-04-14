@@ -42,7 +42,7 @@ impl TextSize {
     /// assert_eq!(TextSize::from(4), TextSize::new(4));
     /// ```
     pub const fn new(offset: u32) -> Self {
-        Self { raw: offset}
+        Self { raw: offset }
     }
 
     /// The text size of some primitive text-like object.

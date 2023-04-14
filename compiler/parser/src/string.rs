@@ -4,10 +4,11 @@
 // regular strings. Since the parser has no definition of f-string formats (Pending PEP 701)
 // we have to do the parsing here, manually.
 use crate::{
-    ast::{Constant, Expr, ExprKind, Location},
+    ast::{Constant, Expr, ExprKind},
     lexer::{LexicalError, LexicalErrorType},
     parser::{parse_expression_located, LalrpopError, ParseError, ParseErrorType},
     token::{StringKind, Tok},
+    Location,
 };
 use itertools::Itertools;
 use ruff_text_size::{TextLen, TextSize};
