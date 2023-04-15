@@ -188,12 +188,16 @@ pub fn parse_tokens(
     mode: Mode,
     source_path: &str,
 ) -> Result<ast::Mod, ParseError> {
-    let marker_token = (Default::default(), mode.to_marker(), Default::default());
+    let marker_token = (mode.to_marker(), Default::default());
     let lexer = iter::once(Ok(marker_token))
         .chain(lxr)
-        .filter_ok(|(_, tok, _)| !matches!(tok, Tok::Comment { .. } | Tok::NonLogicalNewline));
+        .filter_ok(|(tok, _)| !matches!(tok, Tok::Comment { .. } | Tok::NonLogicalNewline));
     python::TopParser::new()
-        .parse(lexer.into_iter())
+        .parse(
+            lexer
+                .into_iter()
+                .map_ok(|(t, range)| (range.start(), t, range.end())),
+        )
         .map_err(|e| parse_error_from_lalrpop(e, source_path))
 }
 

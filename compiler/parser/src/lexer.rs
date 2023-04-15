@@ -36,7 +36,7 @@ use crate::{
 use log::trace;
 use num_bigint::BigInt;
 use num_traits::{Num, Zero};
-use ruff_text_size::{TextLen, TextSize};
+use ruff_text_size::{TextLen, TextRange, TextSize};
 use std::{char, cmp::Ordering, ops::Index, slice::SliceIndex, str::FromStr};
 use unic_emoji_char::is_emoji_presentation;
 use unic_ucd_ident::{is_xid_continue, is_xid_start};
@@ -182,8 +182,8 @@ pub struct Lexer<T: Iterator<Item = char>> {
 pub static KEYWORDS: phf::Map<&'static str, Tok> =
     include!(concat!(env!("OUT_DIR"), "/keywords.rs"));
 
-/// Contains a Token along with its start and end location.
-pub type Spanned = (TextSize, Tok, TextSize);
+/// Contains a Token along with its `range`.
+pub type Spanned = (Tok, TextRange);
 /// The result of lexing a token.
 pub type LexResult = Result<Spanned, LexicalError>;
 
@@ -270,9 +270,9 @@ where
         let end_pos = self.get_pos();
 
         if let Some(tok) = KEYWORDS.get(&name) {
-            Ok((start_pos, tok.clone(), end_pos))
+            Ok((tok.clone(), TextRange::new(start_pos, end_pos)))
         } else {
-            Ok((start_pos, Tok::Name { name }, end_pos))
+            Ok((Tok::Name { name }, TextRange::new(start_pos, end_pos)))
         }
     }
 
@@ -310,7 +310,7 @@ where
             error: LexicalErrorType::OtherError(format!("{e:?}")),
             location: start_pos,
         })?;
-        Ok((start_pos, Tok::Int { value }, end_pos))
+        Ok((Tok::Int { value }, TextRange::new(start_pos, end_pos)))
     }
 
     /// Lex a normal number, that is, no octal, hex or binary number.
@@ -367,16 +367,15 @@ where
                 self.next_char();
                 let end_pos = self.get_pos();
                 Ok((
-                    start_pos,
                     Tok::Complex {
                         real: 0.0,
                         imag: value,
                     },
-                    end_pos,
+                    TextRange::new(start_pos, end_pos),
                 ))
             } else {
                 let end_pos = self.get_pos();
-                Ok((start_pos, Tok::Float { value }, end_pos))
+                Ok((Tok::Float { value }, TextRange::new(start_pos, end_pos)))
             }
         } else {
             // Parse trailing 'j':
@@ -384,7 +383,10 @@ where
                 self.next_char();
                 let end_pos = self.get_pos();
                 let imag = f64::from_str(&value_text).unwrap();
-                Ok((start_pos, Tok::Complex { real: 0.0, imag }, end_pos))
+                Ok((
+                    Tok::Complex { real: 0.0, imag },
+                    TextRange::new(start_pos, end_pos),
+                ))
             } else {
                 let end_pos = self.get_pos();
                 let value = value_text.parse::<BigInt>().unwrap();
@@ -395,7 +397,7 @@ where
                         location: self.get_pos(),
                     });
                 }
-                Ok((start_pos, Tok::Int { value }, end_pos))
+                Ok((Tok::Int { value }, TextRange::new(start_pos, end_pos)))
             }
         }
     }
@@ -455,7 +457,7 @@ where
             match self.window[0] {
                 Some('\n' | '\r') | None => {
                     let end_pos = self.get_pos();
-                    return Ok((start_pos, Tok::Comment(value), end_pos));
+                    return Ok((Tok::Comment(value), TextRange::new(start_pos, end_pos)));
                 }
                 Some(_) => {}
             }
@@ -535,7 +537,7 @@ where
             kind,
             triple_quoted,
         };
-        Ok((start_pos, tok, end_pos))
+        Ok((tok, TextRange::new(start_pos, end_pos)))
     }
 
     // Checks if the character c is a valid starting character as described
@@ -661,7 +663,7 @@ where
                 // New indentation level:
                 self.indentations.push(indentation_level);
                 let tok_pos = self.get_pos();
-                self.emit((tok_pos, Tok::Indent, tok_pos));
+                self.emit((Tok::Indent, TextRange::empty(tok_pos)));
             }
             Ordering::Less => {
                 // One or more dedentations
@@ -675,7 +677,7 @@ where
                         Ordering::Less => {
                             self.indentations.pop();
                             let tok_pos = self.get_pos();
-                            self.emit((tok_pos, Tok::Dedent, tok_pos));
+                            self.emit((Tok::Dedent, TextRange::empty(tok_pos)));
                         }
                         Ordering::Equal => {
                             // We arrived at proper level of indentation.
@@ -720,16 +722,16 @@ where
             // Next, insert a trailing newline, if required.
             if !self.at_begin_of_line {
                 self.at_begin_of_line = true;
-                self.emit((tok_pos, Tok::Newline, tok_pos));
+                self.emit((Tok::Newline, TextRange::empty(tok_pos)));
             }
 
             // Next, flush the indentation stack to zero.
             while !self.indentations.is_empty() {
                 self.indentations.pop();
-                self.emit((tok_pos, Tok::Dedent, tok_pos));
+                self.emit((Tok::Dedent, TextRange::empty(tok_pos)));
             }
 
-            self.emit((tok_pos, Tok::EndOfFile, tok_pos));
+            self.emit((Tok::EndOfFile, TextRange::empty(tok_pos)));
         }
 
         Ok(())
@@ -757,11 +759,11 @@ where
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::EqEqual, tok_end));
+                        self.emit((Tok::EqEqual, TextRange::new(tok_start, tok_end)));
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Equal, tok_end));
+                        self.emit((Tok::Equal, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -771,10 +773,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::PlusEqual, tok_end));
+                    self.emit((Tok::PlusEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::Plus, tok_end));
+                    self.emit((Tok::Plus, TextRange::new(tok_start, tok_end)));
                 }
             }
             '*' => {
@@ -784,7 +786,7 @@ where
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::StarEqual, tok_end));
+                        self.emit((Tok::StarEqual, TextRange::new(tok_start, tok_end)));
                     }
                     Some('*') => {
                         self.next_char();
@@ -792,17 +794,20 @@ where
                             Some('=') => {
                                 self.next_char();
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::DoubleStarEqual, tok_end));
+                                self.emit((
+                                    Tok::DoubleStarEqual,
+                                    TextRange::new(tok_start, tok_end),
+                                ));
                             }
                             _ => {
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::DoubleStar, tok_end));
+                                self.emit((Tok::DoubleStar, TextRange::new(tok_start, tok_end)));
                             }
                         }
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Star, tok_end));
+                        self.emit((Tok::Star, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -813,7 +818,7 @@ where
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::SlashEqual, tok_end));
+                        self.emit((Tok::SlashEqual, TextRange::new(tok_start, tok_end)));
                     }
                     Some('/') => {
                         self.next_char();
@@ -821,17 +826,20 @@ where
                             Some('=') => {
                                 self.next_char();
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::DoubleSlashEqual, tok_end));
+                                self.emit((
+                                    Tok::DoubleSlashEqual,
+                                    TextRange::new(tok_start, tok_end),
+                                ));
                             }
                             _ => {
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::DoubleSlash, tok_end));
+                                self.emit((Tok::DoubleSlash, TextRange::new(tok_start, tok_end)));
                             }
                         }
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Slash, tok_end));
+                        self.emit((Tok::Slash, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -841,10 +849,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::PercentEqual, tok_end));
+                    self.emit((Tok::PercentEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::Percent, tok_end));
+                    self.emit((Tok::Percent, TextRange::new(tok_start, tok_end)));
                 }
             }
             '|' => {
@@ -853,10 +861,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::VbarEqual, tok_end));
+                    self.emit((Tok::VbarEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::Vbar, tok_end));
+                    self.emit((Tok::Vbar, TextRange::new(tok_start, tok_end)));
                 }
             }
             '^' => {
@@ -865,10 +873,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::CircumflexEqual, tok_end));
+                    self.emit((Tok::CircumflexEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::CircumFlex, tok_end));
+                    self.emit((Tok::CircumFlex, TextRange::new(tok_start, tok_end)));
                 }
             }
             '&' => {
@@ -877,10 +885,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::AmperEqual, tok_end));
+                    self.emit((Tok::AmperEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::Amper, tok_end));
+                    self.emit((Tok::Amper, TextRange::new(tok_start, tok_end)));
                 }
             }
             '-' => {
@@ -890,16 +898,16 @@ where
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::MinusEqual, tok_end));
+                        self.emit((Tok::MinusEqual, TextRange::new(tok_start, tok_end)));
                     }
                     Some('>') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Rarrow, tok_end));
+                        self.emit((Tok::Rarrow, TextRange::new(tok_start, tok_end)));
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Minus, tok_end));
+                        self.emit((Tok::Minus, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -909,10 +917,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::AtEqual, tok_end));
+                    self.emit((Tok::AtEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::At, tok_end));
+                    self.emit((Tok::At, TextRange::new(tok_start, tok_end)));
                 }
             }
             '!' => {
@@ -921,7 +929,7 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::NotEqual, tok_end));
+                    self.emit((Tok::NotEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     return Err(LexicalError {
                         error: LexicalErrorType::UnrecognizedToken { tok: '!' },
@@ -980,10 +988,10 @@ where
                 if let Some('=') = self.window[0] {
                     self.next_char();
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::ColonEqual, tok_end));
+                    self.emit((Tok::ColonEqual, TextRange::new(tok_start, tok_end)));
                 } else {
                     let tok_end = self.get_pos();
-                    self.emit((tok_start, Tok::Colon, tok_end));
+                    self.emit((Tok::Colon, TextRange::new(tok_start, tok_end)));
                 }
             }
             ';' => {
@@ -999,22 +1007,25 @@ where
                             Some('=') => {
                                 self.next_char();
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::LeftShiftEqual, tok_end));
+                                self.emit((
+                                    Tok::LeftShiftEqual,
+                                    TextRange::new(tok_start, tok_end),
+                                ));
                             }
                             _ => {
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::LeftShift, tok_end));
+                                self.emit((Tok::LeftShift, TextRange::new(tok_start, tok_end)));
                             }
                         }
                     }
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::LessEqual, tok_end));
+                        self.emit((Tok::LessEqual, TextRange::new(tok_start, tok_end)));
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Less, tok_end));
+                        self.emit((Tok::Less, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -1028,22 +1039,25 @@ where
                             Some('=') => {
                                 self.next_char();
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::RightShiftEqual, tok_end));
+                                self.emit((
+                                    Tok::RightShiftEqual,
+                                    TextRange::new(tok_start, tok_end),
+                                ));
                             }
                             _ => {
                                 let tok_end = self.get_pos();
-                                self.emit((tok_start, Tok::RightShift, tok_end));
+                                self.emit((Tok::RightShift, TextRange::new(tok_start, tok_end)));
                             }
                         }
                     }
                     Some('=') => {
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::GreaterEqual, tok_end));
+                        self.emit((Tok::GreaterEqual, TextRange::new(tok_start, tok_end)));
                     }
                     _ => {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Greater, tok_end));
+                        self.emit((Tok::Greater, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -1061,10 +1075,10 @@ where
                         self.next_char();
                         self.next_char();
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Ellipsis, tok_end));
+                        self.emit((Tok::Ellipsis, TextRange::new(tok_start, tok_end)));
                     } else {
                         let tok_end = self.get_pos();
-                        self.emit((tok_start, Tok::Dot, tok_end));
+                        self.emit((Tok::Dot, TextRange::new(tok_start, tok_end)));
                     }
                 }
             }
@@ -1077,9 +1091,9 @@ where
                 // non-logical newline:
                 if self.nesting == 0 {
                     self.at_begin_of_line = true;
-                    self.emit((tok_start, Tok::Newline, tok_end));
+                    self.emit((Tok::Newline, TextRange::new(tok_start, tok_end)));
                 } else {
-                    self.emit((tok_start, Tok::NonLogicalNewline, tok_end));
+                    self.emit((Tok::NonLogicalNewline, TextRange::new(tok_start, tok_end)));
                 }
             }
             ' ' | '\t' | '\x0C' => {
@@ -1116,11 +1130,10 @@ where
                     self.next_char();
                     let tok_end = self.get_pos();
                     self.emit((
-                        tok_start,
                         Tok::Name {
                             name: c.to_string(),
                         },
-                        tok_end,
+                        TextRange::new(tok_start, tok_end),
                     ));
                 } else {
                     let c = self.next_char();
@@ -1144,7 +1157,7 @@ where
             std::hint::unreachable_unchecked()
         });
         let tok_end = self.get_pos();
-        self.emit((tok_start, ty, tok_end));
+        self.emit((ty, TextRange::new(tok_start, tok_end)));
     }
 
     // Helper function to go to the next character coming up.
@@ -1200,7 +1213,7 @@ where
         );
 
         match token {
-            Ok((_, Tok::EndOfFile, _)) => None,
+            Ok((Tok::EndOfFile, _)) => None,
             r => Some(r),
         }
     }
