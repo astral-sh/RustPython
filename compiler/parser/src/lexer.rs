@@ -19,9 +19,9 @@
 //!     .map(|tok| tok.expect("Failed to lex"))
 //!     .collect::<Vec<_>>();
 //!
-//! for (start, token, end) in tokens {
+//! for (token, range) in tokens {
 //!     println!(
-//!         "{start:?}-{end:?} {token:?}",
+//!         "{token:?}@{range:?}",
 //!     );
 //! }
 //! ```
@@ -663,7 +663,15 @@ where
                 // New indentation level:
                 self.indentations.push(indentation_level);
                 let tok_pos = self.get_pos();
-                self.emit((Tok::Indent, TextRange::empty(tok_pos)));
+                self.emit((
+                    Tok::Indent,
+                    TextRange::new(
+                        tok_pos
+                            - TextSize::new(indentation_level.spaces)
+                            - TextSize::new(indentation_level.tabs),
+                        tok_pos,
+                    ),
+                ));
             }
             Ordering::Less => {
                 // One or more dedentations
@@ -1336,7 +1344,7 @@ mod tests {
 
     pub fn lex_source(source: &str) -> Vec<Tok> {
         let lexer = lex(source, Mode::Module);
-        lexer.map(|x| x.unwrap().1).collect()
+        lexer.map(|x| x.unwrap().0).collect()
     }
 
     fn str_tok(s: &str) -> Tok {
