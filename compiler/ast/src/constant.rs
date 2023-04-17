@@ -132,7 +132,6 @@ impl<U> crate::fold::Fold<U> for ConstantOptimizer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ruff_text_size::TextRange;
 
     #[cfg(feature = "constant-optimization")]
     #[test]

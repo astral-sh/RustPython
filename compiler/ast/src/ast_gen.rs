@@ -3,8 +3,7 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 
 pub use crate::constant::*;
-use ruff_text_size::{TextRange, TextSize};
-use std::ops::Deref;
+pub use ruff_text_size::{TextRange, TextSize};
 
 type Ident = String;
 
@@ -15,26 +14,20 @@ pub struct Located<T, U = ()> {
     pub node: T,
 }
 
-impl<T, U> Located<T, U> {
-    pub fn new(location: TextSize, end_location: TextSize, node: T) -> Self
-    where
-        U: Default,
-    {
+impl<T> Located<T> {
+    pub fn new(start: TextSize, end: TextSize, node: T) -> Self {
         Self {
-            custom: U::default(),
-            range: TextRange::new(location, end_location),
+            range: TextRange::new(start, end),
+            custom: (),
             node,
         }
     }
 
     /// Creates a new node that spans the position specified by `range`.
-    pub fn with_range(node: T, range: TextRange) -> Self
-    where
-        U: Default,
-    {
+    pub fn with_range(node: T, range: TextRange) -> Self {
         Self {
             range,
-            custom: U::default(),
+            custom: (),
             node,
         }
     }
@@ -43,11 +36,6 @@ impl<T, U> Located<T, U> {
     #[inline]
     pub const fn start(&self) -> TextSize {
         self.range.start()
-    }
-
-    #[inline]
-    pub fn custom(&self) -> &U {
-        &self.custom
     }
 
     /// Returns the node
@@ -60,11 +48,6 @@ impl<T, U> Located<T, U> {
     #[inline]
     pub fn into_node(self) -> T {
         self.node
-    }
-
-    #[inline]
-    pub fn into_custom(self) -> U {
-        self.custom
     }
 
     /// Returns the `range` of the node. The range offsets are absolute to the start of the document.
@@ -80,7 +63,7 @@ impl<T, U> Located<T, U> {
     }
 }
 
-impl<T, U> Deref for Located<T, U> {
+impl<T, U> std::ops::Deref for Located<T, U> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {

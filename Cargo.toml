@@ -12,7 +12,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "ruff_text_size", "compiler/ast", "compiler/parser"
+    "ruff_text_size", "compiler/ast", "compiler/core", "compiler/parser", "common"
 ]
 
 [workspace.dependencies]
