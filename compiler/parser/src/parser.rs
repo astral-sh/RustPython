@@ -85,9 +85,10 @@ pub fn parse_expression(source: &str, path: &str) -> Result<ast::Expr, ParseErro
 /// somewhat silly, location:
 ///
 /// ```
-/// use rustpython_parser::{ast::Location, parse_expression_located};
+/// use ruff_text_size::TextSize;
+/// use rustpython_parser::{parse_expression_located};
 ///
-/// let expr = parse_expression_located("1 + 2", "<embedded>", Location::from(400));
+/// let expr = parse_expression_located("1 + 2", "<embedded>", TextSize::from(400));
 /// assert!(expr.is_ok());
 /// ```
 pub fn parse_expression_located(
@@ -144,7 +145,8 @@ pub fn parse(source: &str, mode: Mode, source_path: &str) -> Result<ast::Mod, Pa
 /// # Example
 ///
 /// ```
-/// use rustpython_parser::{ast::Location, Mode, parse_located};
+/// use ruff_text_size::TextSize;
+/// use rustpython_parser::{Mode, parse_located};
 ///
 /// let source = r#"
 /// def fib(i):
@@ -155,7 +157,7 @@ pub fn parse(source: &str, mode: Mode, source_path: &str) -> Result<ast::Mod, Pa
 ///
 /// print(fib(42))
 /// "#;
-/// let program = parse_located(source, Mode::Module, "<embedded>", Location::from(0));
+/// let program = parse_located(source, Mode::Module, "<embedded>", TextSize::from(0));
 /// assert!(program.is_ok());
 /// ```
 pub fn parse_located(
@@ -583,9 +585,9 @@ except* OSError as e:
     fn test_modes() {
         let source = "a[0][1][2][3][4]";
 
-        assert!(parse(&source, Mode::Expression, "<embedded>").is_ok());
-        assert!(parse(&source, Mode::Module, "<embedded>").is_ok());
-        assert!(parse(&source, Mode::Interactive, "<embedded>").is_ok());
+        assert!(parse(source, Mode::Expression, "<embedded>").is_ok());
+        assert!(parse(source, Mode::Module, "<embedded>").is_ok());
+        assert!(parse(source, Mode::Interactive, "<embedded>").is_ok());
     }
 
     #[test]

@@ -833,8 +833,7 @@ mod tests {
                 LexicalErrorType::FStringError(e) => e,
                 e => unreachable!("Expected FStringError: {:?}", e),
             })
-            .err()
-            .expect("Expected error")
+            .expect_err("Expected error")
     }
 
     #[test]

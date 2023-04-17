@@ -140,6 +140,7 @@ mod tests {
         use crate::{fold::Fold, *};
 
         let range = TextRange::default();
+        #[allow(clippy::let_unit_value)]
         let custom = ();
         let ast = Located {
             range,
