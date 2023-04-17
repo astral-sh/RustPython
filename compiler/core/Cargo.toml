@@ -9,7 +9,6 @@ license = "MIT"
 
 [dependencies]
 bitflags = { workspace = true }
-bstr = { workspace = true }
 itertools = { workspace = true }
 num-bigint = { workspace = true }
 num-complex = { workspace = true }
