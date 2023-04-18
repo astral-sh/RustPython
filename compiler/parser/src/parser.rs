@@ -24,7 +24,6 @@ use itertools::Itertools;
 use std::iter;
 
 pub(super) use lalrpop_util::ParseError as LalrpopError;
-use ruff_text_size::TextSize;
 
 /// Parse a full Python program usually consisting of multiple lines.
 ///  
@@ -255,7 +254,7 @@ fn parse_error_from_lalrpop(
             let expected = (expected.len() == 1).then(|| expected[0].clone());
             ParseError {
                 error: ParseErrorType::UnrecognizedToken(token.1, expected),
-                location: token.0 + TextSize::from(1),
+                location: token.0,
                 source_path,
             }
         }
