@@ -1,5 +1,4 @@
 use num_bigint::BigInt;
-pub use rustpython_compiler_core::ConversionFlag;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -122,8 +121,7 @@ impl<U> crate::fold::Fold<U> for ConstantOptimizer {
                 Ok(crate::Expr {
                     node: expr,
                     custom: node.custom,
-                    location: node.location,
-                    end_location: node.end_location,
+                    range: node.range,
                 })
             }
             _ => crate::fold::fold_expr(self, node),
@@ -140,19 +138,17 @@ mod tests {
     fn test_constant_opt() {
         use crate::{fold::Fold, *};
 
-        let start = Default::default();
-        let end = None;
+        let range = TextRange::default();
+        #[allow(clippy::let_unit_value)]
         let custom = ();
         let ast = Located {
-            location: start,
-            end_location: end,
+            range,
             custom,
             node: ExprKind::Tuple {
                 ctx: ExprContext::Load,
                 elts: vec![
                     Located {
-                        location: start,
-                        end_location: end,
+                        range,
                         custom,
                         node: ExprKind::Constant {
                             value: BigInt::from(1).into(),
@@ -160,8 +156,7 @@ mod tests {
                         },
                     },
                     Located {
-                        location: start,
-                        end_location: end,
+                        range,
                         custom,
                         node: ExprKind::Constant {
                             value: BigInt::from(2).into(),
@@ -169,15 +164,13 @@ mod tests {
                         },
                     },
                     Located {
-                        location: start,
-                        end_location: end,
+                        range,
                         custom,
                         node: ExprKind::Tuple {
                             ctx: ExprContext::Load,
                             elts: vec![
                                 Located {
-                                    location: start,
-                                    end_location: end,
+                                    range,
                                     custom,
                                     node: ExprKind::Constant {
                                         value: BigInt::from(3).into(),
@@ -185,8 +178,7 @@ mod tests {
                                     },
                                 },
                                 Located {
-                                    location: start,
-                                    end_location: end,
+                                    range,
                                     custom,
                                     node: ExprKind::Constant {
                                         value: BigInt::from(4).into(),
@@ -194,8 +186,7 @@ mod tests {
                                     },
                                 },
                                 Located {
-                                    location: start,
-                                    end_location: end,
+                                    range,
                                     custom,
                                     node: ExprKind::Constant {
                                         value: BigInt::from(5).into(),
@@ -214,8 +205,7 @@ mod tests {
         assert_eq!(
             new_ast,
             Located {
-                location: start,
-                end_location: end,
+                range,
                 custom,
                 node: ExprKind::Constant {
                     value: Constant::Tuple(vec![
